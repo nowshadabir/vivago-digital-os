@@ -4,7 +4,7 @@ Next.js 15 starter with TypeScript, shadcn/ui primitives, Tailwind CSS, and Pris
 
 ## Getting started
 
-1. Copy `.env.example` to `.env.local` and set `DATABASE_URL`.
+1. Update `.env` with your local configuration values (at minimum `DATABASE_URL`).
 2. Install dependencies with `npm install`.
 3. Run `npm run dev`.
 
