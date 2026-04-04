@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { createSessionToken, sessionCookieOptions } from "@/lib/session";
@@ -20,25 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "OTP code is required." }, { status: 400 });
     }
 
-    const rows = await prisma.$queryRaw<
-      Array<{
-        id: number;
-        email: string;
-        purpose: string;
-        codeHash: string;
-        payload: string | null;
-        expiresAt: Date;
-        verifiedAt: Date | null;
-        attempts: number;
-      }>
-    >(Prisma.sql`
-      SELECT id, email, purpose, codeHash, payload, expiresAt, verifiedAt, attempts
-      FROM auth_otp
-      WHERE id = ${challengeId}
-      LIMIT 1
-    `);
-
-    const challenge = rows[0] ?? null;
+    const challenge = await prisma.authOtp.findUnique({ where: { id: challengeId } });
     if (!challenge || challenge.purpose !== "login") {
       return NextResponse.json({ ok: false, message: "OTP request not found." }, { status: 404 });
     }
@@ -56,9 +37,10 @@ export async function POST(request: Request) {
     }
 
     if (challenge.codeHash !== hashOtpCode(code)) {
-      await prisma.$executeRaw(
-        Prisma.sql`UPDATE auth_otp SET attempts = attempts + 1, updatedAt = NOW() WHERE id = ${challengeId}`
-      );
+      await prisma.authOtp.update({
+        where: { id: challengeId },
+        data: { attempts: { increment: 1 } },
+      });
 
       return NextResponse.json({ ok: false, message: "Invalid OTP code." }, { status: 401 });
     }
@@ -68,9 +50,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: "User not found." }, { status: 404 });
     }
 
-    await prisma.$executeRaw(
-      Prisma.sql`UPDATE auth_otp SET verifiedAt = NOW(), updatedAt = NOW() WHERE id = ${challengeId}`
-    );
+    await prisma.authOtp.update({
+      where: { id: challengeId },
+      data: { verifiedAt: new Date() },
+    });
 
     const response = NextResponse.json({ ok: true });
     const authToken = await createSessionToken(user.id);

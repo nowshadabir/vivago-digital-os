@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -26,7 +27,7 @@ model AuthOtp {
   email      String
   purpose    String
   codeHash   String
-  payload    String?  @db.LongText
+  payload    String?  @db.Text
   expiresAt  DateTime
   verifiedAt DateTime?
   attempts   Int      @default(0)
@@ -48,9 +49,9 @@ model Invoice {
   paymentMethod String             @default("Bank Transfer")
   paymentType   String             @default("Advance Payment")
   taxRate       Int                @default(0)
-  note          String?            @db.LongText
-  terms         String?            @db.LongText
-  signature     String?            @db.LongText
+  note          String?            @db.Text
+  terms         String?            @db.Text
+  signature     String?            @db.Text
   createdById   String?
   createdBy     User?              @relation(fields: [createdById], references: [id], onDelete: SetNull)
   lineItems     InvoiceLineItem[]
@@ -168,7 +169,7 @@ model Reminder {
   dueTime   String
   priority  String   @default("Medium")
   status    String   @default("Pending")
-  note      String?  @db.LongText
+  note      String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

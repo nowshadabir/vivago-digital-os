@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
@@ -50,36 +49,18 @@ export async function POST(request: Request) {
     const codeHash = hashOtpCode(code);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    await prisma.$executeRaw(
-      Prisma.sql`
-        INSERT INTO auth_otp (
-          email,
-          purpose,
-          codeHash,
-          payload,
-          expiresAt,
-          attempts,
-          createdAt,
-          updatedAt
-        )
-        VALUES (
-          ${user.email},
-          ${"login"},
-          ${codeHash},
-          ${null},
-          ${expiresAt},
-          0,
-          NOW(),
-          NOW()
-        )
-      `
-    );
+    const challenge = await prisma.authOtp.create({
+      data: {
+        email: user.email,
+        purpose: "login",
+        codeHash,
+        payload: null,
+        expiresAt,
+      },
+      select: { id: true },
+    });
 
-    const otpRows = await prisma.$queryRaw<Array<{ id: number }>>(Prisma.sql`
-      SELECT id FROM auth_otp WHERE email = ${user.email} AND purpose = 'login' ORDER BY id DESC LIMIT 1
-    `);
-
-    const challengeId = otpRows[0]?.id ?? null;
+    const challengeId = challenge.id;
     if (!challengeId) {
       return NextResponse.json({ ok: false, message: "Unable to create OTP." }, { status: 500 });
     }

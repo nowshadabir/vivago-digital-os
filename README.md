@@ -1,6 +1,6 @@
 # Vivago Digital OS
 
-Next.js 15 starter with TypeScript, shadcn/ui primitives, Tailwind CSS, and Prisma configured for MySQL.
+Next.js 15 starter with TypeScript, shadcn/ui primitives, Tailwind CSS, and Prisma configured for PostgreSQL.
 
 ## Getting started
 
