@@ -353,19 +353,6 @@ export const MOCK_CREDENTIALS = [
     status: "Active",
     note: "Primary hosting",
   },
-  {
-    id: 2,
-    projectId: 2,
-    projectName: "LodgeOS Integration",
-    category: "Database",
-    service: "Supabase",
-    username: "db_admin",
-    password: "db_password_456",
-    endpoint: "https://supabase.com",
-    reviewDate: "2024-06-15",
-    status: "Active",
-    note: "Postgres DB",
-  },
 ];
 
 export const MOCK_ASSETS = {
