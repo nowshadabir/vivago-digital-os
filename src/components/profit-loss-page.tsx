@@ -134,7 +134,8 @@ export function ProfitLossPage() {
       setPayments(MOCK_PAYMENTS.map(p => ({
         ...p,
         acknowledgement: p.acknowledgement as PaymentAcknowledgement | null,
-        costResponsibility: p.costResponsibility as CostResponsibility | null
+        costResponsibility: p.costResponsibility as CostResponsibility | null,
+        reimbursementClient: p.reimbursementClient ?? null
       })));
       setRecords(MOCK_PROFIT_LOSS.map(r => ({
         ...r,
@@ -222,10 +223,10 @@ export function ProfitLossPage() {
 
   const manualRecords = useMemo(() => {
     return records.map((record) => {
-      const netProfit = record.revenue - record.companyCost;
-      const operatingProfit = record.revenue - record.companyCost - record.temporaryCost;
+      const operatingProfit = record.revenue - record.companyCost;
+      const netProfitLoss = operatingProfit - record.temporaryCost;
 
-      return { ...record, netProfit, operatingProfit };
+      return { ...record, netProfitLoss, operatingProfit };
     });
   }, [records]);
 
@@ -300,6 +301,30 @@ export function ProfitLossPage() {
 
   const saveRecord = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    
+    const client = clients.find(c => String(c.id) === formData.clientId);
+    const project = projects.find(p => String(p.id) === formData.projectId);
+
+    if (!client || !project) return;
+
+    const newRecord: ProfitLossRecord = {
+      id: editingId ?? Date.now(),
+      clientId: client.id,
+      clientName: client.name,
+      projectId: project.id,
+      projectName: project.name,
+      revenue: Number(formData.revenue),
+      companyCost: Number(formData.companyCost),
+      temporaryCost: Number(formData.temporaryCost),
+      note: formData.note,
+    };
+
+    if (editingId !== null) {
+      setRecords(prev => prev.map(r => r.id === editingId ? newRecord : r));
+    } else {
+      setRecords(prev => [newRecord, ...prev]);
+    }
+
     closeModal();
   };
 
@@ -323,7 +348,7 @@ export function ProfitLossPage() {
             </div>
             <Button className="bg-slate-900 text-white hover:bg-slate-800" onClick={openCreate}>
               <Plus className="h-4 w-4" />
-              Download Report
+              Add Record
             </Button>
           </header>
 
@@ -499,7 +524,7 @@ export function ProfitLossPage() {
                         <td className="py-3 font-semibold text-emerald-700">{formatBDT(item.revenue)}</td>
                         <td className="py-3">{formatBDT(item.companyCost)}</td>
                         <td className="py-3">{formatBDT(item.temporaryCost)}</td>
-                        <td className="py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${item.netProfit >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>{formatBDT(item.netProfit)}</span></td>
+                        <td className="py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${item.netProfitLoss >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>{formatBDT(item.netProfitLoss)}</span></td>
                         <td className="py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${item.operatingProfit >= 0 ? "bg-cyan-100 text-cyan-700" : "bg-rose-100 text-rose-700"}`}>{formatBDT(item.operatingProfit)}</span></td>
                         <td className="py-3">
                           <div className="flex justify-end gap-2">
