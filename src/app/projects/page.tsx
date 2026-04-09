@@ -184,7 +184,7 @@ export default function ProjectsPage() {
       .reduce((sum, p) => sum + p.amount, 0);
       
     const due = MOCK_DUE_RECORDS
-      .filter(d => d.projectId === viewingProject.id && d.status !== "Collected" as any)
+      .filter(d => d.projectId === viewingProject.id && (d.status as string) !== "Collected")
       .reduce((sum, d) => sum + d.amount, 0);
       
     return { received, due };

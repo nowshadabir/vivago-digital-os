@@ -91,7 +91,7 @@ export default function Home() {
               <div className="rounded-2xl border border-white/60 bg-white/70 p-5 shadow-sm backdrop-blur">
                 <h2 className="font-display text-base font-semibold text-slate-950">UI Prototype</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  This is a UI-only prototype. You can use any credentials to "log in" and explore the app.
+                  This is a UI-only prototype. You can use any credentials to &quot;log in&quot; and explore the app.
                 </p>
               </div>
             </div>

@@ -1,10 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   AtSign,
-  BriefcaseBusiness,
   Camera,
   CheckCircle2,
   Fingerprint,
@@ -15,8 +13,6 @@ import {
   Save,
   ShieldCheck,
   Smartphone,
-  Sparkles,
-  UserRound,
 } from "lucide-react";
 
 import { AppSidebar } from "@/components/app-sidebar";

@@ -191,7 +191,7 @@ export default function InvoicesPage() {
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [formData, setFormData] = useState<InvoiceForm>(defaultForm);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>({
+  const [currentUser] = useState<CurrentUser | null>({
     id: "1",
     name: "User",
     position: "Manager",
