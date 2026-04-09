@@ -1,24 +1,79 @@
 # Vivago Digital OS
 
-Next.js 15 starter with TypeScript, shadcn/ui primitives, Tailwind CSS, and Prisma configured for PostgreSQL.
+Vivago Digital OS is a premium, state-of-the-art internal operating system designed for digital agencies to manage operations, projects, and finances in one unified workspace. This project is currently a high-fidelity UI prototype built with modern web technologies.
 
-## Getting started
+## 🚀 Overview
 
-1. Update `.env` with your local configuration values (at minimum `DATABASE_URL`).
-2. Install dependencies with `npm install`.
-3. Run `npm run dev`.
+The system provides a comprehensive suite of tools for agency management, featuring a sleek, dark-mode-ready interface with glassmorphism effects and dynamic animations. It is designed to streamline workflow from client onboarding to project delivery and financial reporting.
 
-## Included setup
+## ✨ Key Features
 
-- App Router with a polished landing page in `src/app/page.tsx`
-- shadcn-compatible UI primitives in `src/components/ui`
-- Prisma client helper in `src/lib/prisma.ts`
-- MySQL schema in `prisma/schema.prisma`
+### 📊 Operations Dashboard
+- **Real-time Stats**: Track active projects, pending payments, and team utilization.
+- **Financial Health**: Visualize revenue and cost trends at a glance.
 
-## Useful commands
+### 📁 Management Modules
+- **Projects**: Centralized project tracking with detailed status updates, timelines, and valuation tracking.
+- **Clients**: Manage client relationships and historical project data.
+- **Team**: A dedicated module for managing team members, roles, and expertise.
 
-- `npm run build`
-- `npm run lint`
-- `npm run prisma:generate`
-- `npm run prisma:push`
-- `npm run prisma:studio`
+### 💰 Financial Tracking
+- **Payments**: Track incoming and outgoing payments with detailed breakdowns (given/received).
+- **Profit & Loss**: Monitor project-level profitability and company expenses.
+- **Invoices**: Manage and generate billing documents.
+
+### ⚡ Action Center & Tools
+- **Reminders**: Task management with priority levels and due dates to ensure no deadline is missed.
+- **Credentials**: Secure storage for project-related access keys and service endpoints.
+- **Files**: Organized storage for project documents and assets.
+
+### 👤 Profile & Security
+- **Secure Access**: Multi-step authentication flow (UI Prototype).
+- **Personalized Settings**: Manage individual user profiles and preferences.
+
+## 🛠️ Technology Stack
+
+- **Framework**: [Next.js 15+](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **State Management**: React Hooks (useState, useMemo, useEffect)
+
+## 📁 Project Structure
+
+```text
+src/
+├── app/                  # App router pages and layouts
+│   ├── dashboard/        # Main landing overview
+│   ├── projects/         # Project management
+│   ├── clients/          # Client CRM
+│   ├── team/             # Team management
+│   ├── payments/         # Financial tracking
+│   ├── reminders/        # Task management
+│   └── ...               # Asset and profile modules
+├── components/           # Reusable UI primitives and layouts
+│   ├── ui/               # shadcn/ui base components
+│   └── app-sidebar.tsx   # Global navigation system
+├── lib/                  # Utility functions and mock data
+└── ...
+```
+
+## 🚦 Getting Started
+
+1.  **Clone and Install**:
+    ```bash
+    npm install
+    ```
+2.  **Environment Setup**:
+    Since this is a UI prototype, no database is required. The `.env` file is primarily for future extensibility.
+3.  **Run Development Server**:
+    ```bash
+    npm run dev
+    ```
+4.  **Explore**:
+    Navigate to `http://localhost:3000`. You can "log in" with any credentials in this prototype version.
+
+---
+
+*Built with ❤️ for Vivago Digital.*
