@@ -8,12 +8,16 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { unstable_noStore as noStore } from "next/cache";
-import { Prisma } from "@prisma/client";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { prisma } from "@/lib/prisma";
+import {
+  MOCK_PROJECTS,
+  MOCK_CLIENTS,
+  MOCK_PAYMENTS,
+  MOCK_DUE_RECORDS,
+  MOCK_REMINDERS,
+} from "@/lib/mock-data";
 
 type DashboardProject = {
   id: number;
@@ -121,125 +125,31 @@ function formatDirection(value: number) {
   return value >= 0 ? "Positive" : "Negative";
 }
 
-export default async function DashboardPage() {
-  noStore();
-
-  const now = new Date();
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-  const [projects, activeClients, activeClientsTotal, currentReceived, previousReceived, currentCompanyCosts, previousCompanyCosts, currentTempCosts, previousTempCosts, openDueAmount, openDueCount, reminders]: [
-    DashboardProject[],
-    number,
-    number,
-    { _sum: { amount: number | null } },
-    { _sum: { amount: number | null } },
-    { _sum: { amount: number | null } },
-    { _sum: { amount: number | null } },
-    { _sum: { amount: number | null } },
-    { _sum: { amount: number | null } },
-    { _sum: { amount: number | null } },
-    number,
-    DashboardReminder[]
-  ] = await Promise.all([
-    prisma.project.findMany({
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        startDate: true,
-        estimatedDeadline: true,
-        valuation: true,
-        companyCost: true,
-        temporaryCost: true,
-        client: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-    prisma.client.count({ where: { status: "Active" } }),
-    prisma.client.count(),
-    prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: {
-        flow: "Received",
-        date: { gte: currentMonthStart, lt: nextMonthStart },
-      },
-    }),
-    prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: {
-        flow: "Received",
-        date: { gte: previousMonthStart, lt: currentMonthStart },
-      },
-    }),
-    prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: {
-        flow: "Given",
-        costResponsibility: "Company Expense",
-        date: { gte: currentMonthStart, lt: nextMonthStart },
-      },
-    }),
-    prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: {
-        flow: "Given",
-        costResponsibility: "Company Expense",
-        date: { gte: previousMonthStart, lt: currentMonthStart },
-      },
-    }),
-    prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: {
-        flow: "Given",
-        costResponsibility: "Client Reimbursable",
-        date: { gte: currentMonthStart, lt: nextMonthStart },
-      },
-    }),
-    prisma.payment.aggregate({
-      _sum: { amount: true },
-      where: {
-        flow: "Given",
-        costResponsibility: "Client Reimbursable",
-        date: { gte: previousMonthStart, lt: currentMonthStart },
-      },
-    }),
-    prisma.dueRecord.aggregate({
-      _sum: { amount: true },
-      where: { status: { not: "Collected" } },
-    }),
-    prisma.dueRecord.count({ where: { status: { not: "Collected" } } }),
-    prisma.$queryRaw<DashboardReminder[]>(Prisma.sql`
-      SELECT
-        id,
-        title,
-        note,
-        dueDate,
-        dueTime,
-        priority,
-        status
-      FROM reminder
-      WHERE status = 'Pending'
-      ORDER BY dueDate ASC, dueTime ASC
-      LIMIT 4
-    `),
-  ]);
+export default function DashboardPage() {
+  const projects = MOCK_PROJECTS.map(p => ({
+    ...p,
+    startDate: new Date(p.startDate),
+    estimatedDeadline: new Date(p.estimatedDeadline)
+  })) as DashboardProject[];
+  
+  const activeClients = MOCK_CLIENTS.filter(c => c.status === "Active").length;
+  const activeClientsTotal = MOCK_CLIENTS.length;
+  
+  const currentReceivedTotal = MOCK_PAYMENTS.filter(p => p.flow === "Received").reduce((s, p) => s + p.amount, 0);
+  const previousReceivedTotal = currentReceivedTotal * 0.8; // Mocked comparison
+  
+  const currentCompanyCostTotal = MOCK_PAYMENTS.filter(p => p.costResponsibility === "Company Expense").reduce((s, p) => s + p.amount, 0);
+  const previousCompanyCostTotal = currentCompanyCostTotal * 0.9; // Mocked comparison
+  
+  const currentTempCostTotal = MOCK_PAYMENTS.filter(p => p.costResponsibility === "Client Reimbursable").reduce((s, p) => s + p.amount, 0);
+  const previousTempCostTotal = currentTempCostTotal * 1.1; // Mocked comparison
+  
+  const openDueTotal = MOCK_DUE_RECORDS.reduce((s, d) => s + d.amount, 0);
+  const openDueCount = MOCK_DUE_RECORDS.length;
+  
+  const reminders = MOCK_REMINDERS as DashboardReminder[];
 
   const activeProjects = projects.filter((project) => project.status !== "Completed");
-  const currentReceivedTotal = currentReceived._sum.amount ?? 0;
-  const previousReceivedTotal = previousReceived._sum.amount ?? 0;
-  const currentCompanyCostTotal = currentCompanyCosts._sum.amount ?? 0;
-  const previousCompanyCostTotal = previousCompanyCosts._sum.amount ?? 0;
-  const currentTempCostTotal = currentTempCosts._sum.amount ?? 0;
-  const previousTempCostTotal = previousTempCosts._sum.amount ?? 0;
-  const openDueTotal = openDueAmount._sum.amount ?? 0;
   const netProfit = currentReceivedTotal - currentCompanyCostTotal - currentTempCostTotal;
   const profitValue = Math.max(netProfit, 0);
   const lossValue = Math.max(-netProfit, 0);

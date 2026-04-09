@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cachedJson, invalidateCachedJson } from "@/lib/client-cache";
+import { MOCK_REMINDERS } from "@/lib/mock-data";
 
 type ReminderPriority = "Low" | "Medium" | "High";
 type ReminderStatus = "Pending" | "Done";
@@ -44,14 +44,6 @@ type ReminderForm = {
   priority: ReminderPriority;
   status: ReminderStatus;
   note: string;
-};
-
-type ReminderListResponse = {
-  reminders: Reminder[];
-};
-
-type ReminderMutationResponse = {
-  reminder: Reminder;
 };
 
 const defaultForm: ReminderForm = {
@@ -100,35 +92,23 @@ export default function RemindersPage() {
   const [formData, setFormData] = useState<ReminderForm>(defaultForm);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   const today = todayValue();
 
   useEffect(() => {
-    let isMounted = true;
-
     async function loadReminders() {
-      try {
-        const data = await cachedJson<ReminderListResponse>("/api/reminders", 45_000);
-        if (isMounted) {
-          setReminders(data.reminders);
-        }
-      } catch {
-        if (isMounted) {
-          setReminders([]);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setReminders(MOCK_REMINDERS.map(rem => ({
+        ...rem,
+        type: rem.type as ReminderType,
+        priority: rem.priority as ReminderPriority,
+        status: rem.status as ReminderStatus
+      })));
+      setIsLoading(false);
     }
 
     void loadReminders();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const filteredReminders = useMemo(() => {
@@ -158,7 +138,6 @@ export default function RemindersPage() {
   const openCreate = () => {
     setEditingId(null);
     setFormData(defaultForm);
-    setSaveError(null);
     setIsModalOpen(true);
   };
 
@@ -173,7 +152,6 @@ export default function RemindersPage() {
       status: reminder.status,
       note: reminder.note,
     });
-    setSaveError(null);
     setIsModalOpen(true);
   };
 
@@ -181,98 +159,23 @@ export default function RemindersPage() {
     setIsModalOpen(false);
     setEditingId(null);
     setFormData(defaultForm);
-    setSaveError(null);
   };
 
   const setField = (field: keyof ReminderForm, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const saveReminder = async (event: FormEvent<HTMLFormElement>) => {
+  const saveReminder = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    const title = formData.title.trim();
-    const note = formData.note.trim();
-
-    if (!title || !formData.dueDate || !formData.dueTime) return;
-
-    setIsSaving(true);
-
-    try {
-      const payload = {
-        title,
-        type: formData.type,
-        dueDate: formData.dueDate,
-        dueTime: formData.dueTime,
-        priority: formData.priority,
-        status: formData.status,
-        note,
-      };
-
-      const response = await fetch(
-        editingId !== null ? `/api/reminders/${editingId}` : "/api/reminders",
-        {
-          method: editingId !== null ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!response.ok) {
-        setSaveError("Unable to save reminder. Please try again.");
-        return;
-      }
-
-      const data = (await response.json()) as ReminderMutationResponse;
-      invalidateCachedJson("/api/reminders");
-
-      setReminders((prev) =>
-        editingId !== null
-          ? prev.map((item) => (item.id === editingId ? data.reminder : item))
-          : [data.reminder, ...prev]
-      );
-
-      closeModal();
-    } catch {
-      setSaveError("Unable to save reminder. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
+    closeModal();
   };
 
-  const markDone = async (reminder: Reminder) => {
-    try {
-      const response = await fetch(`/api/reminders/${reminder.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ status: "Done" }),
-      });
-
-      if (!response.ok) return;
-
-      const data = (await response.json()) as ReminderMutationResponse;
-      invalidateCachedJson("/api/reminders");
-      setReminders((prev) => prev.map((item) => (item.id === reminder.id ? data.reminder : item)));
-    } catch {
-      setSaveError("Unable to update reminder status.");
-    }
+  const markDone = (reminder: Reminder) => {
+    setReminders((prev) => prev.map((item) => (item.id === reminder.id ? { ...item, status: "Done" } : item)));
   };
 
-  const deleteReminder = async (reminderId: number) => {
-    try {
-      const response = await fetch(`/api/reminders/${reminderId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!response.ok) return;
-
-      invalidateCachedJson("/api/reminders");
-      setReminders((prev) => prev.filter((item) => item.id !== reminderId));
-    } catch {
-      setSaveError("Unable to delete reminder.");
-    }
+  const deleteReminder = (reminderId: number) => {
+    setReminders((prev) => prev.filter((item) => item.id !== reminderId));
   };
 
   return (
@@ -336,12 +239,6 @@ export default function RemindersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-                {saveError && (
-                  <p className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    {saveError}
-                  </p>
-                )}
-
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-600">
                   <Filter className="h-3.5 w-3.5" />
@@ -401,7 +298,7 @@ export default function RemindersPage() {
                                 type="button"
                                 size="sm"
                                 className="bg-emerald-600 text-white hover:bg-emerald-500"
-                                onClick={() => void markDone(item)}
+                                onClick={() => markDone(item)}
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" />
                                 Mark Done
@@ -422,7 +319,7 @@ export default function RemindersPage() {
                               size="sm"
                               variant="outline"
                               className="border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                              onClick={() => void deleteReminder(item.id)}
+                              onClick={() => deleteReminder(item.id)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                               Delete

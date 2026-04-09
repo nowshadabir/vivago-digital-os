@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cachedJson, invalidateCachedJson } from "@/lib/client-cache";
+import { MOCK_PROJECTS, MOCK_CREDENTIALS } from "@/lib/mock-data";
 
 type CredentialCategory =
   | "Domain"
@@ -126,49 +126,20 @@ export default function CredentialsPage() {
   const [formData, setFormData] = useState<CredentialForm>(defaultForm);
   const [loading, setLoading] = useState(true);
 
-  const loadProjects = async () => {
-    const data = await cachedJson<{ projects: Array<{ id: number; name: string }> }>("/api/projects", 45_000);
-    setProjects(data.projects.map((project) => ({ id: project.id, name: project.name })));
-  };
-
-  const loadCredentials = async () => {
-    const data = await cachedJson<{
-      credentials: Array<{
-        id: number;
-        projectId: number;
-        projectName: string;
-        category: string;
-        service: string;
-        endpoint: string;
-        username: string;
-        password: string;
-        reviewDate: string;
-        status: string;
-        note: string | null;
-      }>;
-    }>("/api/credentials", 20_000);
-
-    setCredentials(
-      data.credentials.map((item) => ({
-        id: item.id,
-        projectId: item.projectId,
-        projectName: item.projectName,
-        category: item.category as CredentialCategory,
-        service: item.service,
-        endpoint: item.endpoint,
-        username: item.username,
-        password: item.password,
-        reviewDate: toDateInput(item.reviewDate),
-        status: item.status as CredentialStatus,
-        note: item.note ?? "",
-      }))
-    );
-  };
-
   useEffect(() => {
     const run = async () => {
       setLoading(true);
-      await Promise.all([loadProjects(), loadCredentials()]);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setProjects(MOCK_PROJECTS.map(p => ({ id: p.id, name: p.name })));
+      setCredentials(MOCK_CREDENTIALS.map(c => ({
+        ...c,
+        category: c.category as CredentialCategory,
+        reviewDate: toDateInput(c.reviewDate),
+        status: c.status as CredentialStatus,
+        note: c.note ?? ""
+      })));
+      
       setLoading(false);
     };
     void run();
@@ -224,41 +195,12 @@ export default function CredentialsPage() {
     );
   };
 
-  const saveCredential = async (event: React.FormEvent<HTMLFormElement>) => {
+  const saveCredential = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    const payload = {
-      projectId: Number(formData.projectId),
-      category: formData.category,
-      service: formData.service.trim(),
-      endpoint: formData.endpoint.trim(),
-      username: formData.username.trim(),
-      password: formData.password,
-      reviewDate: formData.reviewDate,
-      status: formData.status,
-      note: formData.note.trim(),
-    };
-
-    const isEditing = editingId !== null;
-    const endpoint = isEditing ? `/api/credentials/${editingId}` : "/api/credentials";
-    const method = isEditing ? "PUT" : "POST";
-
-    const response = await fetch(endpoint, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) return;
-    invalidateCachedJson("/api/credentials");
-    await loadCredentials();
     closeModal();
   };
 
-  const deleteCredential = async (id: number) => {
-    const response = await fetch(`/api/credentials/${id}`, { method: "DELETE" });
-    if (!response.ok) return;
-    invalidateCachedJson("/api/credentials");
+  const deleteCredential = (id: number) => {
     setCredentials((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -355,7 +297,7 @@ export default function CredentialsPage() {
             </CardHeader>
 
             <CardContent className="pt-6">
-              <form className="space-y-5" onSubmit={(event) => void saveCredential(event)}>
+              <form className="space-y-5" onSubmit={saveCredential}>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="project">Project</Label>

@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cachedJson, invalidateCachedJson } from "@/lib/client-cache";
+import { MOCK_PAYMENTS, MOCK_DUE_RECORDS, MOCK_PROJECTS, MOCK_CLIENTS } from "@/lib/mock-data";
 
 type PaymentFlow = "Received" | "Given";
 type PaymentStatus = "Completed" | "Pending" | "Failed";
@@ -172,90 +172,31 @@ export function PaymentsPage() {
   const [editingDueId, setEditingDueId] = useState<number | null>(null);
   const [dueForm, setDueForm] = useState<DueForm>(defaultDueForm);
 
-  const loadProjects = async () => {
-    const data = await cachedJson<{ projects: Array<{ id: number; name: string }> }>("/api/projects", 45_000);
-    setProjects(data.projects.map((project) => ({ id: project.id, name: project.name })));
-  };
-
-  const loadClients = async () => {
-    const data = await cachedJson<{ clients: Array<{ id: number; name: string }> }>("/api/clients", 45_000);
-    setClients(data.clients.map((client) => ({ id: client.id, name: client.name })));
-  };
-
-  const loadPayments = async () => {
-    const data = await cachedJson<{
-      payments: Array<{
-        id: number;
-        date: string;
-        party: string;
-        projectId: number | null;
-        projectName: string | null;
-        purpose: string;
-        acknowledgement: string | null;
-        method: string;
-        amount: number;
-        flow: string;
-        costResponsibility: string | null;
-        reimbursementClient: string | null;
-        status: string;
-        note: string | null;
-      }>;
-    }>("/api/payments", 20_000);
-
-    setPayments(
-      data.payments.map((payment) => ({
-        id: payment.id,
-        date: toDateInput(payment.date),
-        party: payment.party,
-        projectId: payment.projectId,
-        projectName: payment.projectName,
-        purpose: payment.purpose,
-        acknowledgement: payment.acknowledgement as PaymentAcknowledgement | null,
-        method: payment.method as PaymentMethod,
-        amount: payment.amount,
-        flow: payment.flow as PaymentFlow,
-        costResponsibility: payment.costResponsibility as CostResponsibility | null,
-        reimbursementClient: payment.reimbursementClient ?? "",
-        status: payment.status as PaymentStatus,
-        note: payment.note ?? "",
-      }))
-    );
-  };
-
-  const loadDues = async () => {
-    const data = await cachedJson<{
-      dues: Array<{
-        id: number;
-        clientId: number | null;
-        clientName: string | null;
-        projectId: number | null;
-        projectName: string | null;
-        dueDate: string;
-        amount: number;
-        status: string;
-        note: string | null;
-      }>;
-    }>("/api/dues", 20_000);
-
-    setDues(
-      data.dues.map((due) => ({
-        id: due.id,
-        clientId: due.clientId,
-        clientName: due.clientName,
-        projectId: due.projectId,
-        projectName: due.projectName,
-        dueDate: toDateInput(due.dueDate),
-        amount: due.amount,
-        status: due.status as DueStatus,
-        note: due.note ?? "",
-      }))
-    );
-  };
-
   useEffect(() => {
     const run = async () => {
       setLoading(true);
-      await Promise.all([loadProjects(), loadClients(), loadPayments(), loadDues()]);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setProjects(MOCK_PROJECTS.map(p => ({ id: p.id, name: p.name })));
+      setClients(MOCK_CLIENTS.map(c => ({ id: c.id, name: c.name })));
+      setPayments(MOCK_PAYMENTS.map(p => ({
+        ...p,
+        date: toDateInput(p.date),
+        acknowledgement: p.acknowledgement as PaymentAcknowledgement | null,
+        method: p.method as PaymentMethod,
+        flow: p.flow as PaymentFlow,
+        costResponsibility: p.costResponsibility as CostResponsibility | null,
+        reimbursementClient: p.reimbursementClient ?? "",
+        status: p.status as PaymentStatus,
+        note: p.note ?? ""
+      })));
+      setDues(MOCK_DUE_RECORDS.map(d => ({
+        ...d,
+        dueDate: toDateInput(d.dueDate),
+        status: d.status as DueStatus,
+        note: d.note ?? ""
+      })));
+      
       setLoading(false);
     };
 
@@ -329,91 +270,21 @@ export function PaymentsPage() {
     setDueForm(defaultDueForm);
   };
 
-  const savePayment = async (event: React.FormEvent<HTMLFormElement>) => {
+  const savePayment = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    const parsedAmount = Number(paymentForm.amount);
-    const projectId = paymentForm.projectId ? Number(paymentForm.projectId) : null;
-    if (!paymentForm.date || !paymentForm.party.trim() || !paymentForm.purpose.trim() || Number.isNaN(parsedAmount)) return;
-    if (paymentForm.flow === "Received" && !paymentForm.acknowledgement) return;
-    if (paymentForm.flow === "Given" && paymentForm.costResponsibility === "Client Reimbursable" && !paymentForm.reimbursementClient.trim()) return;
-
-    const payload = {
-      date: paymentForm.date,
-      party: paymentForm.party.trim(),
-      projectId,
-      purpose: paymentForm.purpose.trim(),
-      acknowledgement: paymentForm.flow === "Received" ? paymentForm.acknowledgement : null,
-      method: paymentForm.method,
-      amount: parsedAmount,
-      flow: paymentForm.flow,
-      costResponsibility: paymentForm.flow === "Given" ? paymentForm.costResponsibility : null,
-      reimbursementClient:
-        paymentForm.flow === "Given" && paymentForm.costResponsibility === "Client Reimbursable"
-          ? paymentForm.reimbursementClient.trim()
-          : null,
-      status: paymentForm.status,
-      note: paymentForm.note.trim(),
-    };
-
-    const endpoint = editingPaymentId !== null ? `/api/payments/${editingPaymentId}` : "/api/payments";
-    const method = editingPaymentId !== null ? "PUT" : "POST";
-
-    const response = await fetch(endpoint, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) return;
-    invalidateCachedJson("/api/payments");
-    await loadPayments();
     paymentClose();
   };
 
-  const saveDue = async (event: React.FormEvent<HTMLFormElement>) => {
+  const saveDue = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    const parsedAmount = Number(dueForm.amount);
-    const clientId = Number(dueForm.clientId);
-    const projectId = Number(dueForm.projectId);
-    if (!dueForm.dueDate || Number.isNaN(parsedAmount) || Number.isNaN(clientId) || Number.isNaN(projectId)) return;
-
-    const payload = {
-      clientId,
-      projectId,
-      dueDate: dueForm.dueDate,
-      amount: parsedAmount,
-      status: dueForm.status,
-      note: dueForm.note.trim(),
-    };
-
-    const endpoint = editingDueId !== null ? `/api/dues/${editingDueId}` : "/api/dues";
-    const method = editingDueId !== null ? "PUT" : "POST";
-
-    const response = await fetch(endpoint, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) return;
-    invalidateCachedJson("/api/dues");
-    await loadDues();
     dueClose();
   };
 
-  const deletePayment = async (id: number) => {
-    const response = await fetch(`/api/payments/${id}`, { method: "DELETE" });
-    if (!response.ok) return;
-    invalidateCachedJson("/api/payments");
+  const deletePayment = (id: number) => {
     setPayments((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const deleteDue = async (id: number) => {
-    const response = await fetch(`/api/dues/${id}`, { method: "DELETE" });
-    if (!response.ok) return;
-    invalidateCachedJson("/api/dues");
+  const deleteDue = (id: number) => {
     setDues((prev) => prev.filter((item) => item.id !== id));
   };
 

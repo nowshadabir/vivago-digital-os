@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cachedJson, invalidateCachedJson } from "@/lib/client-cache";
+import { MOCK_CLIENTS } from "@/lib/mock-data";
 
 type ClientStatus = "Active" | "Follow Up" | "Delinquent" | "Inactive";
 
@@ -46,8 +46,6 @@ type ClientFormData = {
   due: string;
   status: ClientStatus;
 };
-
-const initialClients: Client[] = [];
 
 const defaultFormData: ClientFormData = {
   name: "",
@@ -81,33 +79,30 @@ function SkeletonBlock({ className }: { className: string }) {
 }
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>(initialClients);
+  const [clients, setClients] = useState<Client[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClientId, setEditingClientId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ClientFormData>(defaultFormData);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
     async function loadClients() {
-      try {
-        const data = await cachedJson<{ clients: Client[] }>("/api/clients", 45_000);
-        if (isMounted) {
-          setClients(data.clients);
-        }
-      } catch {
-        // Keep UI stable if API fails.
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setClients(MOCK_CLIENTS.map(c => ({
+        ...c,
+        email: `${c.name.toLowerCase().replace(" ", "")}@example.com`,
+        number: "+8801712345678",
+        business: "Tech Solutions",
+        projectCount: Math.floor(Math.random() * 5) + 1,
+        totalPaid: Math.floor(Math.random() * 500000) + 100000,
+        due: Math.floor(Math.random() * 50000),
+        status: c.status as ClientStatus
+      })));
+      setIsLoading(false);
     }
 
     void loadClients();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const totalPaid = useMemo(
@@ -159,75 +154,12 @@ export default function ClientsPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDeleteClient = async (clientId: number) => {
-    const response = await fetch(`/api/clients/${clientId}`, { method: "DELETE" });
-    if (!response.ok) return;
-
-    invalidateCachedJson("/api/clients");
+  const handleDeleteClient = (clientId: number) => {
     setClients((prevClients) => prevClients.filter((client) => client.id !== clientId));
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    const parsedProjectCount = Number(formData.projectCount);
-    const parsedTotalPaid = Number(formData.totalPaid);
-    const parsedDue = Number(formData.due);
-
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.number ||
-      !formData.business ||
-      Number.isNaN(parsedProjectCount) ||
-      Number.isNaN(parsedTotalPaid) ||
-      Number.isNaN(parsedDue)
-    ) {
-      return;
-    }
-
-    if (editingClientId !== null) {
-      const response = await fetch(`/api/clients/${editingClientId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          number: formData.number,
-          business: formData.business,
-          projectCount: parsedProjectCount,
-          totalPaid: parsedTotalPaid,
-          due: parsedDue,
-          status: formData.status,
-        }),
-      });
-
-      if (!response.ok) return;
-      invalidateCachedJson("/api/clients");
-      const data = (await response.json()) as { client: Client };
-
-      setClients((prevClients) =>
-        prevClients.map((client) => (client.id === editingClientId ? data.client : client))
-      );
-    } else {
-      const response = await fetch("/api/clients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          number: formData.number,
-          business: formData.business,
-          status: formData.status,
-        }),
-      });
-
-      if (!response.ok) return;
-      invalidateCachedJson("/api/clients");
-      const data = (await response.json()) as { client: Client };
-      setClients((prevClients) => [data.client, ...prevClients]);
-    }
-
     closeModal();
   };
 

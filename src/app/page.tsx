@@ -21,153 +21,36 @@ import { Label } from "@/components/ui/label";
 export default function Home() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [selectedImage, setSelectedImage] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [signupMessage, setSignupMessage] = useState("");
-  const [signupError, setSignupError] = useState("");
-  const [loginChallengeId, setLoginChallengeId] = useState<number | null>(null);
-  const [signupChallengeId, setSignupChallengeId] = useState<number | null>(null);
-  const [loginOtp, setLoginOtp] = useState("");
-  const [signupOtp, setSignupOtp] = useState("");
-  const [loginOtpMessage, setLoginOtpMessage] = useState("");
-  const [signupOtpMessage, setSignupOtpMessage] = useState("");
   const [loginStep, setLoginStep] = useState<"credentials" | "otp">("credentials");
   const [signupStep, setSignupStep] = useState<"credentials" | "otp">("credentials");
   const [loginEmail, setLoginEmail] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
+  const [otp, setOtp] = useState("");
 
-  async function handleLoginSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleLoginSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoginError("");
-    setLoginOtpMessage("");
-
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
-
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = (await response.json()) as { ok?: boolean; otpRequired?: boolean; challengeId?: number; email?: string; message?: string };
-
-      if (!response.ok) {
-        setLoginError(data.message ?? "Login failed.");
-        return;
-      }
-
-      if (data.otpRequired && data.challengeId) {
-        setLoginChallengeId(data.challengeId);
-        setLoginEmail(data.email ?? email);
-        setLoginStep("otp");
-        setLoginOtpMessage(`We sent a 6-digit code to ${data.email ?? email}.`);
-        return;
-      }
-
-      window.location.assign("/dashboard");
-    } catch {
-      setLoginError("Could not connect to login service.");
-    }
+    setLoginEmail(email);
+    setLoginStep("otp");
   }
 
-  async function handleLoginOtpSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleLoginOtpSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoginError("");
-
-    if (!loginChallengeId) {
-      setLoginError("Missing login challenge.");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/auth/login/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ challengeId: loginChallengeId, code: loginOtp }),
-      });
-
-      const data = (await response.json()) as { message?: string };
-
-      if (!response.ok) {
-        setLoginError(data.message ?? "OTP verification failed.");
-        return;
-      }
-
-      window.location.assign("/dashboard");
-    } catch {
-      setLoginError("Could not verify OTP.");
-    }
+    window.location.assign("/dashboard");
   }
 
-  async function handleSignupSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSignupSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSignupMessage("");
-    setSignupError("");
-    setSignupOtpMessage("");
-
     const formData = new FormData(event.currentTarget);
-
-    try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = (await response.json()) as { ok?: boolean; otpRequired?: boolean; challengeId?: number; email?: string; message?: string };
-
-      if (!response.ok) {
-        setSignupError(data.message ?? "Signup failed.");
-        return;
-      }
-
-      if (data.otpRequired && data.challengeId) {
-        setSignupChallengeId(data.challengeId);
-        setSignupEmail(data.email ?? "");
-        setSignupStep("otp");
-        setSignupOtpMessage(`We sent a 6-digit code to ${data.email ?? "your email"}.`);
-        return;
-      }
-
-      setSignupMessage("Account created. You can log in now.");
-      setMode("login");
-      setSelectedImage("");
-      event.currentTarget.reset();
-    } catch {
-      setSignupError("Could not connect to signup service.");
-    }
+    const email = String(formData.get("email") ?? "").trim();
+    setSignupEmail(email);
+    setSignupStep("otp");
   }
 
-  async function handleSignupOtpSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSignupOtpSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSignupError("");
-
-    if (!signupChallengeId) {
-      setSignupError("Missing signup challenge.");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/auth/signup/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ challengeId: signupChallengeId, code: signupOtp }),
-      });
-
-      const data = (await response.json()) as { message?: string };
-
-      if (!response.ok) {
-        setSignupError(data.message ?? "OTP verification failed.");
-        return;
-      }
-
-      window.location.assign("/dashboard");
-    } catch {
-      setSignupError("Could not verify OTP.");
-    }
+    window.location.assign("/dashboard");
   }
 
   return (
@@ -206,9 +89,9 @@ export default function Home() {
                 </p>
               </div>
               <div className="rounded-2xl border border-white/60 bg-white/70 p-5 shadow-sm backdrop-blur">
-                <h2 className="font-display text-base font-semibold text-slate-950">MySQL ready</h2>
+                <h2 className="font-display text-base font-semibold text-slate-950">UI Prototype</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  OTP challenges are stored in the database with expiry and attempt tracking.
+                  This is a UI-only prototype. You can use any credentials to "log in" and explore the app.
                 </p>
               </div>
             </div>
@@ -253,28 +136,20 @@ export default function Home() {
                       <ArrowRight className="h-4 w-4" />
                     </Button>
 
-                    {loginError ? <p className="text-sm text-rose-600">{loginError}</p> : null}
-
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                       No account yet?{" "}
                       <button
                         type="button"
                         onClick={() => {
-                          setSignupError("");
-                          setSignupMessage("");
                           setMode("signup");
                           setLoginStep("credentials");
                           setSignupStep("credentials");
-                          setLoginChallengeId(null);
-                          setSignupChallengeId(null);
                         }}
                         className="font-semibold text-slate-950 hover:underline"
                       >
                         Create one
                       </button>
                     </div>
-
-                    {signupMessage ? <p className="text-sm text-emerald-700">{signupMessage}</p> : null}
                   </form>
                 ) : (
                   <form className="space-y-5" onSubmit={handleLoginOtpSubmit}>
@@ -282,9 +157,9 @@ export default function Home() {
                       <Label htmlFor="login-otp">Verification Code</Label>
                       <Input
                         id="login-otp"
-                        value={loginOtp}
-                        onChange={(event) => setLoginOtp(event.target.value)}
-                        placeholder="6-digit code"
+                        value={otp}
+                        onChange={(event) => setOtp(event.target.value)}
+                        placeholder="Any 6 digits will work"
                         inputMode="numeric"
                         maxLength={6}
                         required
@@ -297,17 +172,14 @@ export default function Home() {
                       <ArrowRight className="h-4 w-4" />
                     </Button>
 
-                    {loginOtpMessage ? <p className="text-sm text-slate-600">{loginOtpMessage}</p> : null}
-                    {loginError ? <p className="text-sm text-rose-600">{loginError}</p> : null}
+                    <p className="text-sm text-slate-600 italic">Hint: Since this is a prototype, any code will work.</p>
 
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                       <button
                         type="button"
                         onClick={() => {
                           setLoginStep("credentials");
-                          setLoginOtp("");
-                          setLoginChallengeId(null);
-                          setLoginOtpMessage("");
+                          setOtp("");
                         }}
                         className="font-semibold text-slate-950 hover:underline"
                       >
@@ -395,20 +267,14 @@ export default function Home() {
                     <ArrowRight className="h-4 w-4" />
                   </Button>
 
-                  {signupError ? <p className="text-sm text-rose-600">{signupError}</p> : null}
-
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                     Already have an account?{" "}
                     <button
                       type="button"
                       onClick={() => {
-                        setSignupError("");
-                        setSignupMessage("");
                         setMode("login");
                         setLoginStep("credentials");
                         setSignupStep("credentials");
-                        setLoginChallengeId(null);
-                        setSignupChallengeId(null);
                       }}
                       className="font-semibold text-slate-950 hover:underline"
                     >
@@ -422,9 +288,9 @@ export default function Home() {
                     <Label htmlFor="signup-otp">Verification Code</Label>
                     <Input
                       id="signup-otp"
-                      value={signupOtp}
-                      onChange={(event) => setSignupOtp(event.target.value)}
-                      placeholder="6-digit code"
+                      value={otp}
+                      onChange={(event) => setOtp(event.target.value)}
+                      placeholder="Any 6 digits will work"
                       inputMode="numeric"
                       maxLength={6}
                       required
@@ -437,17 +303,14 @@ export default function Home() {
                     <ArrowRight className="h-4 w-4" />
                   </Button>
 
-                  {signupOtpMessage ? <p className="text-sm text-slate-600">{signupOtpMessage}</p> : null}
-                  {signupError ? <p className="text-sm text-rose-600">{signupError}</p> : null}
+                  <p className="text-sm text-slate-600 italic">Hint: Since this is a prototype, any code will work.</p>
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                     <button
                       type="button"
                       onClick={() => {
                         setSignupStep("credentials");
-                        setSignupOtp("");
-                        setSignupChallengeId(null);
-                        setSignupOtpMessage("");
+                        setOtp("");
                       }}
                       className="font-semibold text-slate-950 hover:underline"
                     >

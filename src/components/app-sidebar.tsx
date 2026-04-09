@@ -20,8 +20,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cachedJson } from "@/lib/client-cache";
 import { cn } from "@/lib/utils";
 
 type AppSidebarProps = {
@@ -36,7 +34,8 @@ type AppSidebarProps = {
     | "/files"
     | "/credentials"
     | "/reminders"
-    | "/profile";
+    | "/profile"
+    | "/team";
   className?: string;
 };
 
@@ -59,38 +58,30 @@ const navItems = [
   { icon: FileText, label: "Files", href: "/files" },
   { icon: KeyRound, label: "Credentials", href: "/credentials" },
   { icon: Bell, label: "Reminders", href: "/reminders" },
+  { icon: Users, label: "Team", href: "/team" },
 ] as const;
+
+const MOCK_SIDEBAR_USER: SidebarUser = {
+  id: "1",
+  name: "Kazi Nowshad Abir",
+  position: "Operations Manager",
+  email: "nowshad@vivagodigital.com",
+  role: "ADMIN",
+  image: "/uploads/profiles/avatar.png",
+};
 
 export function AppSidebar({ activePath, className }: AppSidebarProps) {
   const router = useRouter();
-  const [loggedInUser, setLoggedInUser] = useState<SidebarUser | null>(null);
+  const [loggedInUser, setLoggedInUser] = useState<SidebarUser | null>(MOCK_SIDEBAR_USER);
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadCurrentUser() {
-      try {
-        const data = await cachedJson<{ user: SidebarUser | null }>("/api/profile/current", 60_000);
-        if (isMounted) setLoggedInUser(data.user);
-      } catch {
-        // Keep sidebar stable if profile API is unavailable.
-      }
-    }
-
-    void loadCurrentUser();
-
-    return () => {
-      isMounted = false;
-    };
+    // Already using mock data nowshad, no need to fetch.
+    setLoggedInUser(MOCK_SIDEBAR_USER);
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } finally {
-      setLoggedInUser(null);
-      router.push("/");
-    }
+  const handleLogout = () => {
+    setLoggedInUser(null);
+    router.push("/");
   };
 
   return (
@@ -137,12 +128,10 @@ export function AppSidebar({ activePath, className }: AppSidebarProps) {
             : "border-slate-200 bg-white/90 hover:bg-slate-100"
         )}
       >
-        {loggedInUser?.image ? (
-          <Image
+        {loggedInUser?.image && loggedInUser.image.startsWith("http") ? (
+          <img
             src={loggedInUser.image}
             alt={loggedInUser.name}
-            width={36}
-            height={36}
             className="h-9 w-9 rounded-xl object-cover"
           />
         ) : (

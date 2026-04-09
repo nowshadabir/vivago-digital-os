@@ -84,10 +84,50 @@ type CurrentUser = {
   role: "USER" | "ADMIN";
 };
 
-const initialInvoices: Invoice[] = [];
+const initialInvoices: Invoice[] = [
+  {
+    id: 1,
+    invoiceNumber: "INV-24-X4E2",
+    client: "Acme Corp",
+    project: "E-commerce Redesign",
+    clientPhone: "+8801700000000",
+    clientEmail: "billing@acme.com",
+    issuedDate: "2024-03-25",
+    status: "Paid",
+    paymentMethod: "Bank Transfer",
+    paymentType: "Advance Payment",
+    taxRate: 5,
+    note: "Thank you for your business.",
+    terms: "Payment is due within 15 days.",
+    signature: null,
+    lineItems: [
+      { id: 1, description: "UI Design Phase", qty: 1, unitPrice: 125000 },
+      { id: 2, description: "Frontend Development", qty: 1, unitPrice: 125000 },
+    ],
+  },
+  {
+    id: 2,
+    invoiceNumber: "INV-24-Y5F3",
+    client: "Global Tech",
+    project: "LodgeOS Integration",
+    clientPhone: "+8801700000001",
+    clientEmail: "accounts@globaltech.com",
+    issuedDate: "2024-04-01",
+    status: "Sent",
+    paymentMethod: "Bank Transfer",
+    paymentType: "Partial Payment",
+    taxRate: 5,
+    note: "Partial payment for Integration phase.",
+    terms: "Payment is due within 7 days.",
+    signature: null,
+    lineItems: [
+      { id: 1, description: "API Integration", qty: 1, unitPrice: 75000 },
+    ],
+  },
+];
 
 const companyLogoSrc = "/logo/logo.png";
-const defaultSignatureSrc = "/uploads/profiles/signature/signature%20-%20kazi%20Nowshad%20Abir.png";
+const defaultSignatureSrc = "/uploads/profiles/signature/signature - kazi Nowshad Abir.png";
 
 const defaultForm: InvoiceForm = {
   invoiceNumber: "",
@@ -151,65 +191,24 @@ export default function InvoicesPage() {
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [formData, setFormData] = useState<InvoiceForm>(defaultForm);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>({
+    id: "1",
+    name: "User",
+    position: "Manager",
+    username: "user",
+    email: "user@example.com",
+    role: "ADMIN"
+  });
 
   useEffect(() => {
-    let isMounted = true;
-
     async function loadInvoices() {
-      try {
-        const response = await fetch("/api/invoices", { cache: "no-store" });
-        if (!response.ok) {
-          if (isMounted) {
-            setInvoices([]);
-          }
-          return;
-        }
-
-        const data = (await response.json()) as { invoices: Invoice[] };
-        if (isMounted) {
-          setInvoices(data.invoices ?? []);
-        }
-      } catch {
-        if (isMounted) {
-          setInvoices([]);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setInvoices(initialInvoices);
+      setIsLoading(false);
     }
 
     void loadInvoices();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadCurrentUser() {
-      try {
-        const response = await fetch("/api/profile/current", { cache: "no-store" });
-        if (!response.ok) return;
-
-        const data = (await response.json()) as { user: CurrentUser | null };
-        if (isMounted) {
-          setCurrentUser(data.user);
-        }
-      } catch {
-        // Keep null user if profile fetch fails.
-      }
-    }
-
-    void loadCurrentUser();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   const totals = useMemo(() => {
@@ -326,15 +325,7 @@ export default function InvoicesPage() {
     });
   };
 
-  const handleDeleteInvoice = async (invoiceId: number) => {
-    const response = await fetch(`/api/invoices/${invoiceId}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      return;
-    }
-
+  const handleDeleteInvoice = (invoiceId: number) => {
     setInvoices((prev) => prev.filter((invoice) => invoice.id !== invoiceId));
   };
 
@@ -362,79 +353,8 @@ export default function InvoicesPage() {
     [formData.note]
   );
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    const parsedTaxRate = Number(formData.taxRate);
-    const parsedLineItems: LineItem[] = formData.lineItems
-      .map((item) => ({
-        id: item.id,
-        description: item.description.trim(),
-        qty: Number(item.qty),
-        unitPrice: Number(item.unitPrice),
-      }))
-      .filter((item) => item.description !== "");
-
-    const hasInvalidLine = parsedLineItems.some(
-      (item) => Number.isNaN(item.qty) || Number.isNaN(item.unitPrice) || item.qty <= 0 || item.unitPrice < 0
-    );
-
-    if (
-      !formData.invoiceNumber ||
-      !formData.client ||
-      !formData.project ||
-      !formData.clientPhone ||
-      !formData.clientEmail ||
-      !formData.issuedDate ||
-      Number.isNaN(parsedTaxRate) ||
-      parsedLineItems.length === 0 ||
-      hasInvalidLine
-    ) {
-      return;
-    }
-
-    const response = await fetch(editingInvoiceId !== null ? `/api/invoices/${editingInvoiceId}` : "/api/invoices", {
-      method: editingInvoiceId !== null ? "PUT" : "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        invoiceNumber: formData.invoiceNumber,
-        client: formData.client,
-        project: formData.project,
-        clientPhone: formData.clientPhone,
-        clientEmail: formData.clientEmail,
-        issuedDate: formData.issuedDate,
-        status: formData.status,
-        paymentMethod: formData.paymentMethod,
-        paymentType: formData.paymentType,
-        taxRate: parsedTaxRate,
-        note: formData.note,
-        terms: formData.terms,
-        signature: formData.signature,
-        lineItems: parsedLineItems.map((item) => ({
-          description: item.description,
-          qty: item.qty,
-          unitPrice: item.unitPrice,
-        })),
-      }),
-    });
-
-    if (!response.ok) {
-      return;
-    }
-
-    const data = (await response.json()) as { invoice: Invoice | null };
-    if (!data.invoice) {
-      return;
-    }
-
-    setInvoices((prev) =>
-      editingInvoiceId !== null
-        ? prev.map((invoice) => (invoice.id === editingInvoiceId ? data.invoice! : invoice))
-        : [data.invoice!, ...prev]
-    );
-
     closeModal();
   };
 
@@ -737,7 +657,7 @@ export default function InvoicesPage() {
                             id="invoiceStatus"
                             className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-900/10"
                             value={formData.status}
-                            onChange={(event) => setField("status", event.target.value)}
+                            onChange={(event) => setField("status", event.target.value as InvoiceStatus)}
                           >
                             <option>Draft</option>
                             <option>Sent</option>
@@ -777,7 +697,7 @@ export default function InvoicesPage() {
                         <div className="mt-4 grid gap-3">
                           <div className="grid gap-2">
                             <Label htmlFor="paymentType">Payment Type</Label>
-                            <select id="paymentType" className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-900/10" value={formData.paymentType} onChange={(event) => setField("paymentType", event.target.value)}>
+                            <select id="paymentType" className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-900/10" value={formData.paymentType} onChange={(event) => setField("paymentType", event.target.value as PaymentType)}>
                               <option>Advance Payment</option>
                               <option>Partial Payment</option>
                               <option>Final Payment</option>
@@ -785,7 +705,7 @@ export default function InvoicesPage() {
                           </div>
                           <div className="grid gap-2">
                             <Label htmlFor="paymentMethod">Payment Method</Label>
-                            <select id="paymentMethod" className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-900/10" value={formData.paymentMethod} onChange={(event) => setField("paymentMethod", event.target.value)}>
+                            <select id="paymentMethod" className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-900/10" value={formData.paymentMethod} onChange={(event) => setField("paymentMethod", event.target.value as PaymentMethod)}>
                               <option>Bank Transfer</option>
                               <option>Cash</option>
                               <option>Card</option>

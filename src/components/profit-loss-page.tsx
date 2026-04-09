@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cachedJson, invalidateCachedJson } from "@/lib/client-cache";
+import { MOCK_PROJECTS, MOCK_CLIENTS, MOCK_PAYMENTS, MOCK_PROFIT_LOSS } from "@/lib/mock-data";
 
 type ClientOption = {
   id: number;
@@ -116,111 +116,31 @@ export function ProfitLossPage() {
   const [formData, setFormData] = useState<ProfitLossForm>(defaultForm);
   const [loading, setLoading] = useState(true);
 
-  const loadClients = async () => {
-    const data = await cachedJson<{ clients: Array<{ id: number; name: string }> }>("/api/clients", 45_000);
-    setClients(data.clients.map((client) => ({ id: client.id, name: client.name })));
-  };
-
-  const loadProjects = async () => {
-    const data = await cachedJson<{
-      projects: Array<{
-        id: number;
-        name: string;
-        clientId: number;
-        clientName: string;
-        valuation: number;
-        companyCost: number;
-        temporaryCost: number;
-      }>;
-    }>("/api/projects", 45_000);
-
-    setProjects(
-      data.projects.map((project) => ({
-        id: project.id,
-        name: project.name,
-        clientId: project.clientId,
-        clientName: project.clientName,
-        valuation: project.valuation,
-        companyCost: project.companyCost,
-        temporaryCost: project.temporaryCost,
-      }))
-    );
-  };
-
-  const loadRecords = async () => {
-    const data = await cachedJson<{
-      records: Array<{
-        id: number;
-        clientId: number;
-        clientName: string;
-        projectId: number;
-        projectName: string;
-        revenue: number;
-        companyCost: number;
-        temporaryCost: number;
-        note: string | null;
-      }>;
-    }>("/api/profit-loss", 20_000);
-
-    setRecords(
-      data.records.map((record) => ({
-        id: record.id,
-        clientId: record.clientId,
-        clientName: record.clientName,
-        projectId: record.projectId,
-        projectName: record.projectName,
-        revenue: record.revenue,
-        companyCost: record.companyCost,
-        temporaryCost: record.temporaryCost,
-        note: record.note ?? "",
-      }))
-    );
-  };
-
-  const loadPayments = async () => {
-    const data = await cachedJson<{
-      payments: Array<{
-        id: number;
-        date: string;
-        party: string;
-        projectId: number | null;
-        projectName: string | null;
-        purpose: string;
-        acknowledgement: string | null;
-        method: string;
-        amount: number;
-        flow: string;
-        costResponsibility: string | null;
-        reimbursementClient: string | null;
-        status: string;
-        note: string | null;
-      }>;
-    }>("/api/payments", 20_000);
-
-    setPayments(
-      data.payments.map((payment) => ({
-        id: payment.id,
-        date: payment.date,
-        party: payment.party,
-        projectId: payment.projectId,
-        projectName: payment.projectName,
-        purpose: payment.purpose,
-        acknowledgement: payment.acknowledgement as PaymentAcknowledgement | null,
-        method: payment.method,
-        amount: payment.amount,
-        flow: payment.flow,
-        costResponsibility: payment.costResponsibility as CostResponsibility | null,
-        reimbursementClient: payment.reimbursementClient,
-        status: payment.status,
-        note: payment.note,
-      }))
-    );
-  };
-
   useEffect(() => {
     const run = async () => {
       setLoading(true);
-      await Promise.all([loadClients(), loadProjects(), loadRecords(), loadPayments()]);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setClients(MOCK_CLIENTS.map(c => ({ id: c.id, name: c.name })));
+      setProjects(MOCK_PROJECTS.map(p => ({
+        id: p.id,
+        name: p.name,
+        clientId: p.clientId,
+        clientName: p.clientName,
+        valuation: p.valuation,
+        companyCost: p.companyCost,
+        temporaryCost: p.temporaryCost
+      })));
+      setPayments(MOCK_PAYMENTS.map(p => ({
+        ...p,
+        acknowledgement: p.acknowledgement as PaymentAcknowledgement | null,
+        costResponsibility: p.costResponsibility as CostResponsibility | null
+      })));
+      setRecords(MOCK_PROFIT_LOSS.map(r => ({
+        ...r,
+        note: r.note ?? ""
+      })));
+      
       setLoading(false);
     };
 
@@ -378,53 +298,12 @@ export function ProfitLossPage() {
     }));
   };
 
-  const saveRecord = async (event: React.FormEvent<HTMLFormElement>) => {
+  const saveRecord = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    const clientId = Number(formData.clientId);
-    const projectId = Number(formData.projectId);
-    const revenue = Number(formData.revenue);
-    const companyCost = Number(formData.companyCost);
-    const temporaryCost = Number(formData.temporaryCost);
-
-    if (
-      Number.isNaN(clientId) ||
-      Number.isNaN(projectId) ||
-      Number.isNaN(revenue) ||
-      Number.isNaN(companyCost) ||
-      Number.isNaN(temporaryCost)
-    ) {
-      return;
-    }
-
-    const payload = {
-      clientId,
-      projectId,
-      revenue,
-      companyCost,
-      temporaryCost,
-      note: formData.note.trim(),
-    };
-
-    const endpoint = editingId !== null ? `/api/profit-loss/${editingId}` : "/api/profit-loss";
-    const method = editingId !== null ? "PUT" : "POST";
-
-    const response = await fetch(endpoint, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) return;
-    invalidateCachedJson("/api/profit-loss");
-    await loadRecords();
     closeModal();
   };
 
-  const deleteRecord = async (id: number) => {
-    const response = await fetch(`/api/profit-loss/${id}`, { method: "DELETE" });
-    if (!response.ok) return;
-    invalidateCachedJson("/api/profit-loss");
+  const deleteRecord = (id: number) => {
     setRecords((prev) => prev.filter((record) => record.id !== id));
   };
 
