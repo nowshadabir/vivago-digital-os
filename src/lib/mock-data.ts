@@ -107,6 +107,7 @@ export const MOCK_REMINDERS = [
   {
     id: 1,
     title: "Client Meeting: Acme Corp",
+    type: "Client",
     note: "Discuss progress on e-commerce redesign and next milestones.",
     dueDate: "2024-04-12",
     dueTime: "10:00 AM",
@@ -116,6 +117,7 @@ export const MOCK_REMINDERS = [
   {
     id: 2,
     title: "Project Handover: Brand Identity",
+    type: "Project",
     note: "Finalize all assets and send to client.",
     dueDate: "2024-04-15",
     dueTime: "04:00 PM",
@@ -125,6 +127,7 @@ export const MOCK_REMINDERS = [
   {
     id: 3,
     title: "Review Financial Health",
+    type: "Payment",
     note: "Month-end financial review and reporting.",
     dueDate: "2024-04-30",
     dueTime: "11:00 AM",
