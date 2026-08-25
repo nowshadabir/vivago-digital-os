@@ -18,6 +18,7 @@ import {
   PanelLeftOpen,
   ReceiptText,
   Scale,
+  Settings,
   Users,
   X,
 } from "lucide-react";
@@ -28,18 +29,19 @@ import { cn } from "@/lib/utils";
 
 type AppSidebarProps = {
   activePath:
-    | "/dashboard"
-    | "/projects"
-    | "/clients"
-    | "/invoices"
-    | "/payment-record"
-    | "/payments"
-    | "/profit-loss"
-    | "/files"
-    | "/credentials"
-    | "/reminders"
-    | "/profile"
-    | "/team";
+  | "/dashboard"
+  | "/projects"
+  | "/clients"
+  | "/invoices"
+  | "/payment-record"
+  | "/payments"
+  | "/profit-loss"
+  | "/files"
+  | "/credentials"
+  | "/reminders"
+  | "/profile"
+  | "/team"
+  | "/settings";
   className?: string;
 };
 
@@ -63,13 +65,14 @@ const navItems = [
   { icon: KeyRound, label: "Credentials", href: "/credentials" },
   { icon: Bell, label: "Reminders", href: "/reminders" },
   { icon: Users, label: "Team", href: "/team" },
+  { icon: Settings, label: "Settings", href: "/settings" },
 ] as const;
 
 const MOCK_SIDEBAR_USER: SidebarUser = {
   id: "1",
   name: "Kazi Nowshad Abir",
   position: "Operations Manager",
-  email: "nowshad@vivagodigital.com",
+  email: "nowshad@getvivago.com",
   role: "ADMIN",
   image: "/uploads/profiles/avatar.png",
 };
@@ -209,7 +212,7 @@ export function AppSidebar({ activePath, className }: AppSidebarProps) {
                 )}
               >
                 {loggedInUser?.image &&
-                loggedInUser.image.startsWith("http") ? (
+                  loggedInUser.image.startsWith("http") ? (
                   <img
                     src={loggedInUser.image}
                     alt={loggedInUser.name}
@@ -382,7 +385,7 @@ export function AppSidebar({ activePath, className }: AppSidebarProps) {
                 )}
               >
                 {loggedInUser?.image &&
-                loggedInUser.image.startsWith("http") ? (
+                  loggedInUser.image.startsWith("http") ? (
                   <img
                     src={loggedInUser.image}
                     alt={loggedInUser.name}
@@ -434,7 +437,7 @@ export function AppSidebar({ activePath, className }: AppSidebarProps) {
                 )}
               >
                 {loggedInUser?.image &&
-                loggedInUser.image.startsWith("http") ? (
+                  loggedInUser.image.startsWith("http") ? (
                   <img
                     src={loggedInUser.image}
                     alt={loggedInUser.name}

@@ -15,8 +15,10 @@ import {
   Plus,
   Printer,
   Save,
+  Search,
   Trash2,
   Upload,
+  X,
 } from "lucide-react";
 
 import { AppSidebar } from "@/components/app-sidebar";
@@ -120,11 +122,52 @@ function generateInvoiceNo() {
 const defaultSignatureSrc = "/uploads/profiles/signature/signature - kazi Nowshad Abir.png";
 const invoiceLogoSrc = "/logo/Invoicelogo_logo_trimmed.png";
 
+type ClientDirectoryEntry = {
+  id: number;
+  business: string;
+  contactName: string;
+  email: string;
+  number: string;
+};
+
+const CLIENT_DIRECTORY: ClientDirectoryEntry[] = [
+  {
+    id: 1,
+    business: "Acme Corp",
+    contactName: "Alex Vance",
+    email: "billing@acme.com",
+    number: "+880 1711-223344",
+  },
+  {
+    id: 2,
+    business: "Global Tech",
+    contactName: "Sarah Connor",
+    email: "accounts@globaltech.com",
+    number: "+880 1819-556677",
+  },
+  {
+    id: 3,
+    business: "Nebula Systems",
+    contactName: "David Bowman",
+    email: "contact@nebulasystems.io",
+    number: "+880 1912-334455",
+  },
+  {
+    id: 4,
+    business: "Starlight Inc",
+    contactName: "Elena Rostova",
+    email: "finance@starlight.org",
+    number: "+880 1610-998877",
+  },
+];
+
 function InvoiceCreateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
   const isEditing = Boolean(editId);
+
+  const [showClientSuggestions, setShowClientSuggestions] = useState(false);
 
   const [formData, setFormData] = useState<InvoiceData>({
     clientName: "",
@@ -169,6 +212,28 @@ function InvoiceCreateForm() {
   // Field change helper
   const handleFieldChange = (field: keyof InvoiceData, value: string | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Filtered matching clients based on typed business name
+  const filteredClientSuggestions = useMemo(() => {
+    if (!formData.clientName.trim()) return CLIENT_DIRECTORY;
+    const query = formData.clientName.toLowerCase();
+    return CLIENT_DIRECTORY.filter(
+      (c) =>
+        c.business.toLowerCase().includes(query) ||
+        c.contactName.toLowerCase().includes(query) ||
+        c.email.toLowerCase().includes(query)
+    );
+  }, [formData.clientName]);
+
+  const selectClient = (client: ClientDirectoryEntry) => {
+    setFormData((prev) => ({
+      ...prev,
+      clientName: client.business,
+      clientEmail: client.email,
+      clientNumber: client.number,
+    }));
+    setShowClientSuggestions(false);
   };
 
   // Line item manipulation
@@ -454,8 +519,8 @@ function InvoiceCreateForm() {
             {/* 1. PRIMARY METADATA */}
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Client Information */}
-              <Card className="border-slate-200 bg-white/90 shadow-sm rounded-3xl overflow-hidden">
-                <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
+              <Card className="relative z-30 border-slate-200 bg-white/90 shadow-sm rounded-3xl overflow-visible">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4 rounded-t-3xl">
                   <CardTitle className="text-base text-slate-900">
                     Client Information (Bill To)
                   </CardTitle>
@@ -463,29 +528,88 @@ function InvoiceCreateForm() {
                     Client business name, email, and contact number
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 p-6">
-                  {/* Business Name */}
-                  <div className="space-y-2">
-                    <Label htmlFor="clientName" className="text-xs font-semibold text-slate-700">
-                      Business Name <span className="text-rose-500">*</span>
-                    </Label>
+                <CardContent className="space-y-4 p-6 overflow-visible">
+                  {/* Business Name (Searchbar type with autocomplete suggestions) */}
+                  <div className="relative z-40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="clientName" className="text-xs font-semibold text-slate-700">
+                        Business Name <span className="text-rose-500">*</span>
+                      </Label>
+                      <span className="text-[11px] text-cyan-700 font-medium">
+                        Search or type to auto-fill
+                      </span>
+                    </div>
+
                     <div className="relative">
-                      <Building2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <Input
                         id="clientName"
-                        list="clientSuggestions"
-                        placeholder="e.g. Acme Corp"
-                        className="pl-10 h-11 rounded-xl border-slate-200 bg-white text-sm"
+                        placeholder="Search business name (e.g. Acme Corp)..."
+                        className="pl-10 pr-9 h-11 rounded-xl border-slate-200 bg-white text-sm"
                         value={formData.clientName}
-                        onChange={(e) => handleFieldChange("clientName", e.target.value)}
+                        onChange={(e) => {
+                          handleFieldChange("clientName", e.target.value);
+                          setShowClientSuggestions(true);
+                        }}
+                        onFocus={() => setShowClientSuggestions(true)}
                         required
+                        autoComplete="off"
                       />
-                      <datalist id="clientSuggestions">
-                        {MOCK_CLIENTS.map((client) => (
-                          <option key={client.id} value={client.name} />
-                        ))}
-                      </datalist>
+                      {formData.clientName && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({
+                              ...prev,
+                              clientName: "",
+                              clientEmail: "",
+                              clientNumber: "",
+                            }));
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 rounded-full p-0.5"
+                          title="Clear client info"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
+
+                    {/* Floating Suggestion Dropdown */}
+                    {showClientSuggestions && filteredClientSuggestions.length > 0 && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setShowClientSuggestions(false)}
+                        />
+                        <div className="absolute left-0 right-0 top-full z-50 mt-1.5 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl ring-1 ring-slate-900/10 max-h-60 overflow-y-auto no-scrollbar space-y-1 animate-in fade-in zoom-in-95">
+                          <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                            <span>Client Directory Suggestions</span>
+                            <span className="font-normal text-slate-400">Click to auto-fill</span>
+                          </div>
+                          {filteredClientSuggestions.map((client) => (
+                            <button
+                              key={client.id}
+                              type="button"
+                              onClick={() => selectClient(client)}
+                              className="flex w-full items-start justify-between rounded-xl p-2.5 text-left text-xs hover:bg-slate-50 transition-colors group cursor-pointer"
+                            >
+                              <div className="space-y-0.5">
+                                <p className="font-bold text-slate-900 group-hover:text-cyan-800 transition-colors">
+                                  {client.business}
+                                </p>
+                                <p className="text-[11px] text-slate-500 font-medium">
+                                  {client.contactName}
+                                </p>
+                              </div>
+                              <div className="text-right space-y-0.5 text-[11px] text-slate-500">
+                                <p className="font-mono text-slate-600">{client.email}</p>
+                                <p className="font-mono text-slate-400">{client.number}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Email & Phone */}

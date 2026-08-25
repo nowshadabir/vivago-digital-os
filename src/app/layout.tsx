@@ -4,6 +4,7 @@ import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { PwaRegister } from "@/components/pwa-register";
 import { SidebarProvider } from "@/components/sidebar-context";
+import { ToastProvider } from "@/components/toast-context";
 
 const bodyFont = Manrope({
   subsets: ["latin"],
@@ -41,8 +42,10 @@ export default function RootLayout({
         className={`${bodyFont.variable} ${displayFont.variable} font-sans`}
       >
         <SidebarProvider>
-          <PwaRegister />
-          {children}
+          <ToastProvider>
+            <PwaRegister />
+            {children}
+          </ToastProvider>
         </SidebarProvider>
       </body>
     </html>
