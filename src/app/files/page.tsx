@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset } from "@/components/sidebar-inset";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -242,9 +243,9 @@ export default function FilesPage() {
       <div className="pointer-events-none absolute inset-0 opacity-60 [background:linear-gradient(to_right,rgba(148,163,184,0.14)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.14)_1px,transparent_1px)] [background-size:44px_44px]" />
 
       <section className="relative w-full">
-        <AppSidebar activePath="/files" className="lg:fixed lg:bottom-4 lg:left-4 lg:top-4 lg:w-[350px]" />
+        <AppSidebar activePath="/files" />
 
-        <div className="space-y-5 lg:ml-[374px]">
+        <SidebarInset className="space-y-5">
           <header className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-sm backdrop-blur-xl md:flex-row md:items-center md:justify-between">
             <div><p className="text-sm text-slate-500">Project Archive Storage</p><h2 className="font-display text-3xl font-semibold text-slate-900">Files Library</h2></div>
             <Button className="bg-slate-900 text-white hover:bg-slate-800" onClick={openCreateModal}><Plus className="h-4 w-4" />Register New File</Button>
@@ -306,7 +307,7 @@ export default function FilesPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </SidebarInset>
       </section>
 
       {isModalOpen && (

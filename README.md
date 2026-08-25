@@ -1,6 +1,6 @@
-# Vivago Digital OS
+# Vivago Technologies OS
 
-Vivago Digital OS is a premium, state-of-the-art internal operating system designed for digital agencies to manage operations, projects, and finances in one unified workspace. This project is currently a high-fidelity UI prototype built with modern web technologies.
+Vivago Technologies OS is a premium, state-of-the-art internal operating system designed for digital agencies to manage operations, projects, and finances in one unified workspace. This project is currently a high-fidelity UI prototype built with modern web technologies.
 
 ## 🚀 Overview
 
@@ -76,4 +76,4 @@ src/
 
 ---
 
-*Built with ❤️ for Vivago Digital.*
+*Built with ❤️ for Vivago Technologies.*

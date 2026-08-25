@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset } from "@/components/sidebar-inset";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   MOCK_PROJECTS,
@@ -219,12 +220,9 @@ export default function DashboardPage() {
       <div className="pointer-events-none absolute inset-0 opacity-60 [background:linear-gradient(to_right,rgba(148,163,184,0.14)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.14)_1px,transparent_1px)] [background-size:46px_46px]" />
 
       <section className="relative w-full">
-        <AppSidebar
-          activePath="/dashboard"
-          className="lg:fixed lg:bottom-4 lg:left-4 lg:top-4 lg:w-[350px]"
-        />
+        <AppSidebar activePath="/dashboard" />
 
-        <div className="space-y-5 lg:ml-[374px]">
+        <SidebarInset className="space-y-5">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {metrics.map((metric) => {
               const Icon = metric.icon;
@@ -378,7 +376,7 @@ export default function DashboardPage() {
               </Card>
             </div>
           </div>
-        </div>
+        </SidebarInset>
       </section>
     </main>
   );

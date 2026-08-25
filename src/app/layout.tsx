@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
 
 import "./globals.css";
 import { PwaRegister } from "@/components/pwa-register";
+import { SidebarProvider } from "@/components/sidebar-context";
 
 const bodyFont = Manrope({
   subsets: ["latin"],
@@ -14,11 +15,14 @@ const displayFont = Space_Grotesk({
   variable: "--font-display",
 });
 
-export const metadata: Metadata = {
-  applicationName: "Vivago Digital OS",
-  title: "Vivago Digital OS",
-  description: "Vivago Digital OS is a business operations workspace for clients, projects, invoices, and internal records.",
+export const viewport: Viewport = {
   themeColor: "#0f172a",
+};
+
+export const metadata: Metadata = {
+  applicationName: "Vivago Technologies OS",
+  title: "Vivago Technologies OS",
+  description: "Vivago Technologies OS is a business operations workspace for clients, projects, invoices, and internal records.",
   icons: {
     icon: [{ url: "/logo/logo.png", sizes: "any", type: "image/png" }],
     apple: [{ url: "/logo/logo.png", sizes: "any", type: "image/png" }],
@@ -36,8 +40,10 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${bodyFont.variable} ${displayFont.variable} font-sans`}
       >
-        <PwaRegister />
-        {children}
+        <SidebarProvider>
+          <PwaRegister />
+          {children}
+        </SidebarProvider>
       </body>
     </html>
   );

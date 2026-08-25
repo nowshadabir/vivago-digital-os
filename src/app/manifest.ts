@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Vivago Digital OS",
+    name: "Vivago Technologies OS",
     short_name: "Vivago OS",
-    description: "Vivago Digital OS is a business operations workspace for clients, projects, invoices, and internal records.",
+    description: "Vivago Technologies OS is a business operations workspace for clients, projects, invoices, and internal records.",
     start_url: "/",
     scope: "/",
     display: "standalone",
